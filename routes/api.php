@@ -1,0 +1,46 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\ClasifReclamoController;
+use App\Http\Controllers\API\EstablecimientoController;
+use App\Http\Controllers\API\ReclamoController;
+use App\Http\Controllers\API\RespuestaReclamoController;
+
+/*
+|--------------------------------------------------------------------------
+| Rutas Públicas (Formulario Web en Angular para Ciudadanos)
+|--------------------------------------------------------------------------
+*/
+// Registrar un nuevo reclamo
+Route::post('/reclamos', [ReclamoController::class, 'store']);
+
+// Lista de establecimientos activos para el formulario público
+Route::get('/establecimientos', [EstablecimientoController::class, 'index']);
+
+// Lista de códigos de clasificación activos para el formulario público
+Route::get('/clasificaciones', [ClasifReclamoController::class, 'index']);
+
+// Consultar el estado de un reclamo específico
+Route::get('/reclamos/{correlativo}', [ReclamoController::class, 'show']);
+
+
+/*
+|--------------------------------------------------------------------------
+| Rutas Privadas / Administrativas (Intranet de la Empresa)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('admin')->group(function () {
+    
+    // Lista total de quejas/reclamos para el panel administrativo
+    // URL Final: GET http://127.0.0
+    Route::get('/reclamos', [ReclamoController::class, 'index']);
+
+    // Registrar la respuesta oficial a un reclamo
+    // URL Final: POST http://127.0.0
+    Route::post('/respuestas', [RespuestaReclamoController::class, 'store']);
+
+    // Consultar una respuesta oficial específica
+    // URL Final: GET http://127.0.0/{correlativo}
+    Route::get('/respuestas/{correlativo}', [RespuestaReclamoController::class, 'show']);
+    
+});
