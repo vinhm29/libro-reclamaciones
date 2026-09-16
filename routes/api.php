@@ -23,6 +23,9 @@ Route::get('/clasificaciones', [ClasifReclamoController::class, 'index']);
 // Buscar los datos de una persona por tipo y número de documento
 Route::get('/personas/buscar', [ReclamoController::class, 'buscar']);
 
+// Actualizar los datos de una persona existente
+Route::put('/personas/{n_documento}', [ReclamoController::class, 'actualizarPersona']);
+
 // Consultar el estado de un reclamo específico
 Route::get('/reclamos/{correlativo}', [ReclamoController::class, 'show']);
 
@@ -40,6 +43,10 @@ Route::prefix('admin')->group(function () {
     // Registrar la respuesta oficial a un reclamo
     // URL Final: POST http://127.0.0
     Route::post('/respuestas', [RespuestaReclamoController::class, 'store']);
+
+    // Catálogos para el formulario de respuesta administrativa
+    Route::get('/clasificaciones-respuesta', [RespuestaReclamoController::class, 'clasificaciones']);
+    Route::get('/estados-reclamo', [RespuestaReclamoController::class, 'estados']);
 
     // Consultar una respuesta oficial específica
     // URL Final: GET http://127.0.0/{correlativo}

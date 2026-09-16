@@ -46,4 +46,35 @@ class PersonaLookupTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['n_documento']);
     }
+
+    public function test_it_updates_an_existing_person(): void
+    {
+        Persona::create([
+            'n_documento' => '77665544',
+            'tipo_documento' => 'DNI',
+            'nombre_completo' => 'María Pérez',
+            'activo' => true,
+        ]);
+
+        $response = $this->putJson('/api/personas/77665544', [
+            'tipo_documento' => 'DNI',
+            'nombre_completo' => 'María Pérez Actualizada',
+            'domicilio' => 'Nueva dirección 456',
+            'referencia' => null,
+            'correo' => 'maria.actualizada@example.com',
+            'telefono' => '987654321',
+            'fecha_nacimiento' => '1990-05-10',
+        ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('data.nombre_completo', 'María Pérez Actualizada');
+
+        $this->assertDatabaseHas('persona', [
+            'n_documento' => '77665544',
+            'nombre_completo' => 'María Pérez Actualizada',
+            'correo' => 'maria.actualizada@example.com',
+        ]);
+    }
 }

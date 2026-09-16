@@ -3,14 +3,37 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\RespuestaReclamo;
+use App\Models\ClasifRespuesta;
+use App\Models\EstadoRespReclamo;
 use App\Models\Reclamo;
-use Illuminate\Http\Request;
+use App\Models\RespuestaReclamo;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class RespuestaReclamoController extends Controller
 {
+    public function clasificaciones(): JsonResponse
+    {
+        return response()->json([
+            'status' => 'success',
+            'data' => ClasifRespuesta::query()
+                ->where('activo', true)
+                ->orderBy('descripcion')
+                ->get(['id_clasif_resp', 'descripcion']),
+        ]);
+    }
+
+    public function estados(): JsonResponse
+    {
+        return response()->json([
+            'status' => 'success',
+            'data' => EstadoRespReclamo::query()
+                ->orderBy('id_estado_reclamo')
+                ->get(['id_estado_reclamo', 'nombre_estado', 'descripcion']),
+        ]);
+    }
+
     /**
      * Canal Administrativo: Registrar la respuesta oficial a un reclamo específico.
      * Endpoint: POST /api/admin/respuestas
@@ -20,12 +43,12 @@ class RespuestaReclamoController extends Controller
         // 1. Validación estricta mapeada con tu tabla 'respuesta_reclamo'
         $request->validate([
             'correlativo_reclamo' => 'required|string|exists:reclamo,correlativo', // PK y FK al mismo tiempo
-            'archivo_adjunto'     => 'required|string', // Ruta del PDF o documento sustentatorio
-            'observaciones'       => 'required|string', // Detalle de la resolución de la empresa
-            'canal_notif'         => 'required|string|max:25', // E.g., 'CORREO', 'DOMICILIO'
-            'fecha_notif'         => 'required|date_format:Y-m-d H:i:s', // Formato de fecha y hora
-            'id_clasif_resp'      => 'required|string|max:20|exists:clasif_respuesta,id_clasif_resp', // FK
-            'id_estado_reclamo'   => 'required|integer|exists:estado_resp_reclamo,id_estado_reclamo', // FK (E.g., 3 = RESUELTO)
+            'archivo_adjunto' => 'required|string', // Ruta del PDF o documento sustentatorio
+            'observaciones' => 'required|string', // Detalle de la resolución de la empresa
+            'canal_notif' => 'required|string|max:25', // E.g., 'CORREO', 'DOMICILIO'
+            'fecha_notif' => 'required|date_format:Y-m-d H:i:s', // Formato de fecha y hora
+            'id_clasif_resp' => 'required|string|max:20|exists:clasif_respuesta,id_clasif_resp', // FK
+            'id_estado_reclamo' => 'required|integer|exists:estado_resp_reclamo,id_estado_reclamo', // FK (E.g., 3 = RESUELTO)
         ]);
 
         // Usamos una transacción para asegurar consistencia entre la respuesta y el estado del reclamo
@@ -38,43 +61,44 @@ class RespuestaReclamoController extends Controller
 
             if ($existeRespuesta) {
                 return response()->json([
-                    'status'  => 'error',
-                    'message' => 'Este reclamo ya cuenta con una respuesta oficial registrada.'
+                    'status' => 'error',
+                    'message' => 'Este reclamo ya cuenta con una respuesta oficial registrada.',
                 ], 400);
             }
 
             // 3. Crear la respuesta en SQLite mediante asignación masiva
             $respuesta = RespuestaReclamo::create([
                 'correlativo_reclamo' => $request->input('correlativo_reclamo'),
-                'archivo_adjunto'     => $request->input('archivo_adjunto'),
-                'observaciones'       => $request->input('observaciones'),
-                'canal_notif'         => $request->input('canal_notif'),
-                'fecha_notif'         => $request->input('fecha_notif'),
-                'id_clasif_resp'      => $request->input('id_clasif_resp'),
-                'id_estado_reclamo'   => $request->input('id_estado_reclamo'),
-                'activo'              => true
+                'archivo_adjunto' => $request->input('archivo_adjunto'),
+                'observaciones' => $request->input('observaciones'),
+                'canal_notif' => $request->input('canal_notif'),
+                'fecha_notif' => $request->input('fecha_notif'),
+                'id_clasif_resp' => $request->input('id_clasif_resp'),
+                'id_estado_reclamo' => $request->input('id_estado_reclamo'),
+                'activo' => true,
             ]);
 
             // 4. Cambiar el estado del reclamo de forma automática en la tabla 'reclamo'
             // Opcional: Si deseas marcar 'activo' como false al finalizar el flujo del reclamo.
             Reclamo::where('correlativo', $request->input('correlativo_reclamo'))->update([
-                'activo' => false // Se da por concluido el ciclo de atención del reclamo
+                'activo' => false, // Se da por concluido el ciclo de atención del reclamo
             ]);
 
             DB::commit();
 
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'La respuesta al reclamo ha sido registrada y notificada con éxito.',
-                'data'    => $respuesta
+                'data' => $respuesta,
             ], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'No se pudo procesar el registro de la respuesta.',
-                'error'   => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -90,16 +114,16 @@ class RespuestaReclamoController extends Controller
             ->where('correlativo_reclamo', $correlativo)
             ->first();
 
-        if (!$respuesta) {
+        if (! $respuesta) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'No se encontró ninguna respuesta oficial asociada a este correlativo.'
+                'status' => 'error',
+                'message' => 'No se encontró ninguna respuesta oficial asociada a este correlativo.',
             ], 404);
         }
 
         return response()->json([
             'status' => 'success',
-            'data'   => $respuesta
+            'data' => $respuesta,
         ], 200);
     }
 }

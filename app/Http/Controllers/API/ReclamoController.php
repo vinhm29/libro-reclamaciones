@@ -51,6 +51,49 @@ class ReclamoController extends Controller
     }
 
     /**
+     * Canal Público: Actualiza los datos de una persona existente.
+     * Endpoint: PUT /api/personas/{n_documento}
+     */
+    public function actualizarPersona(Request $request, string $nDocumento): JsonResponse
+    {
+        $validated = $request->validate([
+            'tipo_documento' => 'required|string|max:10',
+            'nombre_completo' => 'required|string',
+            'domicilio' => 'nullable|string',
+            'referencia' => 'nullable|string',
+            'correo' => 'nullable|email',
+            'telefono' => 'nullable|string|max:9',
+            'fecha_nacimiento' => 'nullable|date',
+        ]);
+
+        $persona = Persona::where('n_documento', $nDocumento)->first();
+
+        if (! $persona) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'La persona no existe.',
+            ], 404);
+        }
+
+        $persona->update($validated);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Los datos de la persona fueron actualizados correctamente.',
+            'data' => $persona->only([
+                'n_documento',
+                'tipo_documento',
+                'nombre_completo',
+                'domicilio',
+                'referencia',
+                'correo',
+                'telefono',
+                'fecha_nacimiento',
+            ]),
+        ]);
+    }
+
+    /**
      * Canal Público: Registra el ciudadano y guarda el reclamo en la BD.
      * Endpoint: POST /api/reclamos
      */

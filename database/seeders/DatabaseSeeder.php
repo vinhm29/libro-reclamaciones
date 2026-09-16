@@ -5,8 +5,8 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
@@ -55,9 +55,46 @@ class DatabaseSeeder extends Seeder
             'updated_at' => $now,
         ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        DB::table('clasif_respuesta')->insertOrIgnore([
+            [
+                'id_clasif_resp' => 'RESP-01',
+                'descripcion' => 'Atendido favorablemente',
+                'activo' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'id_clasif_resp' => 'RESP-02',
+                'descripcion' => 'Atendido desfavorablemente',
+                'activo' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
         ]);
+
+        DB::table('estado_resp_reclamo')->insertOrIgnore([
+            [
+                'id_estado_reclamo' => 1,
+                'nombre_estado' => 'En evaluación',
+                'descripcion' => 'La respuesta está siendo evaluada.',
+            ],
+            [
+                'id_estado_reclamo' => 2,
+                'nombre_estado' => 'Resuelto',
+                'descripcion' => 'El reclamo fue atendido y cerrado.',
+            ],
+            [
+                'id_estado_reclamo' => 3,
+                'nombre_estado' => 'Improcedente',
+                'descripcion' => 'El reclamo no procede.',
+            ],
+        ]);
+
+        User::firstOrCreate(
+            ['email' => 'test@example.com'],
+            User::factory()->make([
+                'name' => 'Test User',
+            ])->toArray()
+        );
     }
 }
