@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\ClasifReclamoController;
 use App\Http\Controllers\API\EstablecimientoController;
 use App\Http\Controllers\API\ReclamoController;
 use App\Http\Controllers\API\RespuestaReclamoController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,9 +20,11 @@ Route::get('/establecimientos', [EstablecimientoController::class, 'index']);
 // Lista de códigos de clasificación activos para el formulario público
 Route::get('/clasificaciones', [ClasifReclamoController::class, 'index']);
 
+// Buscar los datos de una persona por tipo y número de documento
+Route::get('/personas/buscar', [ReclamoController::class, 'buscar']);
+
 // Consultar el estado de un reclamo específico
 Route::get('/reclamos/{correlativo}', [ReclamoController::class, 'show']);
-
 
 /*
 |--------------------------------------------------------------------------
@@ -30,7 +32,7 @@ Route::get('/reclamos/{correlativo}', [ReclamoController::class, 'show']);
 |--------------------------------------------------------------------------
 */
 Route::prefix('admin')->group(function () {
-    
+
     // Lista total de quejas/reclamos para el panel administrativo
     // URL Final: GET http://127.0.0
     Route::get('/reclamos', [ReclamoController::class, 'index']);
@@ -42,5 +44,5 @@ Route::prefix('admin')->group(function () {
     // Consultar una respuesta oficial específica
     // URL Final: GET http://127.0.0/{correlativo}
     Route::get('/respuestas/{correlativo}', [RespuestaReclamoController::class, 'show']);
-    
+
 });
