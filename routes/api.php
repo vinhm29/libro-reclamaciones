@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\ClasifReclamoController;
 use App\Http\Controllers\API\EstablecimientoController;
+use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\ReclamoController;
 use App\Http\Controllers\API\RespuestaReclamoController;
 use Illuminate\Support\Facades\Route;
@@ -29,12 +30,14 @@ Route::put('/personas/{n_documento}', [ReclamoController::class, 'actualizarPers
 // Consultar el estado de un reclamo específico
 Route::get('/reclamos/{correlativo}', [ReclamoController::class, 'show']);
 
+Route::post('/login', [AuthController::class, 'login']);
+
 /*
 |--------------------------------------------------------------------------
 | Rutas Privadas / Administrativas (Intranet de la Empresa)
 |--------------------------------------------------------------------------
 */
-Route::prefix('admin')->group(function () {
+Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function () {
 
     // Lista total de quejas/reclamos para el panel administrativo
     // URL Final: GET http://127.0.0
@@ -51,5 +54,7 @@ Route::prefix('admin')->group(function () {
     // Consultar una respuesta oficial específica
     // URL Final: GET http://127.0.0/{correlativo}
     Route::get('/respuestas/{correlativo}', [RespuestaReclamoController::class, 'show']);
+
+    Route::post('/logout', [AuthController::class, 'logout']);
 
 });

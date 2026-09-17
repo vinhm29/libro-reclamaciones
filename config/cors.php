@@ -20,7 +20,7 @@ return [
     'allowed_methods' => ['*'],
 
     // 3. Declarar explícitamente la URL local donde corre tu proyecto Angular
-    'allowed_origins' => ['http://localhost:4200'],
+    'allowed_origins' => ['http://localhost:4200', 'http://127.0.0.1:4200'],
 
     'allowed_origins_patterns' => [],
 

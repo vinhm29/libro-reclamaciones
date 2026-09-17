@@ -189,7 +189,7 @@ class ReclamoController extends Controller
     public function index(): JsonResponse
     {
         // Trae los reclamos cargando en una sola consulta los datos de la Persona y el Establecimiento
-        $reclamos = Reclamo::with(['persona', 'establecimiento', 'clasificacion'])
+        $reclamos = Reclamo::with(['persona', 'establecimiento', 'clasificacion', 'respuesta'])
             ->orderBy('fecha_creacion', 'desc')
             ->get();
 

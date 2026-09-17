@@ -7,6 +7,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -90,11 +91,13 @@ class DatabaseSeeder extends Seeder
             ],
         ]);
 
-        User::firstOrCreate(
+        User::updateOrCreate(
             ['email' => 'test@example.com'],
-            User::factory()->make([
+            [
                 'name' => 'Test User',
-            ])->toArray()
+                'password' => Hash::make('password'),
+                'is_admin' => true,
+            ]
         );
     }
 }

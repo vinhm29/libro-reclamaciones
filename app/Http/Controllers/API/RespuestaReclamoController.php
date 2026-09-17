@@ -43,13 +43,21 @@ class RespuestaReclamoController extends Controller
         // 1. Validación estricta mapeada con tu tabla 'respuesta_reclamo'
         $request->validate([
             'correlativo_reclamo' => 'required|string|exists:reclamo,correlativo', // PK y FK al mismo tiempo
-            'archivo_adjunto' => 'required|string', // Ruta del PDF o documento sustentatorio
+            'archivo_adjunto' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
             'observaciones' => 'required|string', // Detalle de la resolución de la empresa
-            'canal_notif' => 'required|string|max:25', // E.g., 'CORREO', 'DOMICILIO'
+            'canal_notif' => 'nullable|string|max:25', // E.g., 'CORREO', 'DOMICILIO'
             'fecha_notif' => 'required|date_format:Y-m-d H:i:s', // Formato de fecha y hora
-            'id_clasif_resp' => 'required|string|max:20|exists:clasif_respuesta,id_clasif_resp', // FK
+            'id_clasif_resp' => 'nullable|string|max:20|exists:clasif_respuesta,id_clasif_resp', // FK
             'id_estado_reclamo' => 'required|integer|exists:estado_resp_reclamo,id_estado_reclamo', // FK (E.g., 3 = RESUELTO)
         ]);
+
+        $esEstadoEvaluacion = (int) $request->input('id_estado_reclamo') === 1;
+        if (! $esEstadoEvaluacion && (! $request->hasFile('archivo_adjunto') || ! $request->filled('canal_notif') || ! $request->filled('id_clasif_resp'))) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Para cerrar el reclamo debes adjuntar un archivo, seleccionar un canal y una clasificación.',
+            ], 422);
+        }
 
         // Usamos una transacción para asegurar consistencia entre la respuesta y el estado del reclamo
         DB::beginTransaction();
@@ -57,9 +65,9 @@ class RespuestaReclamoController extends Controller
         try {
             // 2. Verificar si el reclamo ya cuenta con una respuesta previa
             // Al ser una relación HasOne con llave primaria 'correlativo_reclamo', solo se permite una respuesta única.
-            $existeRespuesta = RespuestaReclamo::where('correlativo_reclamo', $request->input('correlativo_reclamo'))->exists();
+            $respuestaExistente = RespuestaReclamo::where('correlativo_reclamo', $request->input('correlativo_reclamo'))->first();
 
-            if ($existeRespuesta) {
+            if ($respuestaExistente && (int) $respuestaExistente->id_estado_reclamo !== 1) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Este reclamo ya cuenta con una respuesta oficial registrada.',
@@ -67,21 +75,28 @@ class RespuestaReclamoController extends Controller
             }
 
             // 3. Crear la respuesta en SQLite mediante asignación masiva
-            $respuesta = RespuestaReclamo::create([
+            $rutaArchivo = $request->hasFile('archivo_adjunto')
+                ? $request->file('archivo_adjunto')->store('respuestas', 'public')
+                : null;
+
+            $datosRespuesta = [
                 'correlativo_reclamo' => $request->input('correlativo_reclamo'),
-                'archivo_adjunto' => $request->input('archivo_adjunto'),
+                'archivo_adjunto' => $rutaArchivo,
                 'observaciones' => $request->input('observaciones'),
                 'canal_notif' => $request->input('canal_notif'),
                 'fecha_notif' => $request->input('fecha_notif'),
                 'id_clasif_resp' => $request->input('id_clasif_resp'),
                 'id_estado_reclamo' => $request->input('id_estado_reclamo'),
                 'activo' => true,
-            ]);
+            ];
 
-            // 4. Cambiar el estado del reclamo de forma automática en la tabla 'reclamo'
-            // Opcional: Si deseas marcar 'activo' como false al finalizar el flujo del reclamo.
+            $respuesta = $respuestaExistente
+                ? tap($respuestaExistente)->update($datosRespuesta)
+                : RespuestaReclamo::create($datosRespuesta);
+
+            // En evaluación mantiene el caso abierto; los demás estados lo cierran.
             Reclamo::where('correlativo', $request->input('correlativo_reclamo'))->update([
-                'activo' => false, // Se da por concluido el ciclo de atención del reclamo
+                'activo' => $esEstadoEvaluacion,
             ]);
 
             DB::commit();

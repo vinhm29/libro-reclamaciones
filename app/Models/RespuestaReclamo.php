@@ -12,9 +12,6 @@ class RespuestaReclamo extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    const CREATED_AT = 'fecha_creacion';
-    const UPDATED_AT = 'fecha_modificacion';
-
     protected $fillable = [
         'correlativo_reclamo', // Llave primaria y foránea a la vez
         'archivo_adjunto',
